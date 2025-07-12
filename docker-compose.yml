@@ -4,6 +4,7 @@ volumes:
   ollama_storage:
   qdrant_storage:
   open_webui_storage:
+  comfyui_storage:
 
 networks:
   demo:
@@ -56,6 +57,14 @@ x-openwebui: &service-openwebui
     - open_webui_storage:/app/backend/data
   environment:
     - OLLAMA_BASE_URL=http://ollama:11434
+
+x-comfyui: &service-comfyui
+  networks: ['demo']
+  restart: unless-stopped
+  ports:
+    - "127.0.0.1:8188:8188"
+  volumes:
+    - comfyui_storage:/root
 
 services:
   postgres:
@@ -176,6 +185,19 @@ services:
     container_name: openwebui-gpu
     depends_on:
       - ollama-gpu
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+  comfyui-gpu:
+    profiles: ["gpu-nvidia"]
+    <<: *service-comfyui
+    image: yanwk/comfyui-boot:cu124-slim
+    container_name: comfyui-gpu
     deploy:
       resources:
         reservations:
