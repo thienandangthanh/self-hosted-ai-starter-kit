@@ -4,6 +4,14 @@ volumes:
   ollama_storage:
   qdrant_storage:
   open_webui_storage:
+  swarmdata:
+    name: swarmdata
+  swarmbackend:
+    name: swarmbackend
+  swarmdlnodes:
+    name: swarmdlnodes
+  swarmextensions:
+    name: swarmextensions
 
 networks:
   demo:
@@ -177,6 +185,39 @@ services:
     container_name: openwebui-gpu
     depends_on:
       - ollama-gpu
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+  swarmui:
+    profiles: ["gpu-nvidia"]
+    image: swarmui
+    user: ${HOST_UID:-1000}:${HOST_GID:-1000}
+    cap_drop:
+      - ALL
+    build:
+      context: ./SwarmUI
+      args:
+        UID: ${HOST_UID:-1000}
+      dockerfile: launchtools/StandardDockerfile.docker
+    container_name: swarmui
+    networks: ['demo']
+    # uncomment `network_mode: host` if you want to access other services on the host network (eg a separated comfy instance)
+    # network_mode: host
+    volumes:
+      - swarmdata:/SwarmUI/Data
+      - swarmbackend:/SwarmUI/dlbackend
+      - swarmdlnodes:/SwarmUI/src/BuiltinExtensions/ComfyUIBackend/DLNodes
+      - swarmextensions:/SwarmUI/src/Extensions
+      - ./SwarmUI/Models:/SwarmUI/Models
+      - ./SwarmUI/Output:/SwarmUI/Output
+      - ./SwarmUI/src/BuiltinExtensions/ComfyUIBackend/CustomWorkflows:/SwarmUI/src/BuiltinExtensions/ComfyUIBackend/CustomWorkflows
+    ports:
+      - "7801:7801"
     deploy:
       resources:
         reservations:
