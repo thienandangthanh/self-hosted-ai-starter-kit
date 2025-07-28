@@ -1,3 +1,3 @@
 #!/usr/bin/env bash
 
-docker compose --profile gpu-nvidia up -d
+HOST_UID="$(id -u)" HOST_GID="$(id -g)" docker compose --profile gpu-nvidia up -d
